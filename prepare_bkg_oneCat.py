@@ -1356,7 +1356,7 @@ objName ==objName_before ):
         self.draw_canvas(mplot,"%s/other/"%(self.plotsDir),"correction_pdf%s_%s_M_lvj_sig_to_sideband"%(label,mlvj_model),0,1,0,1);
 
 	#@#make the same plot with log-scale
-	###NOT WORKING atm, FIXME
+	###FIXME NOT WORKING atm, causes seg-val
 	if False:# 'WJets0' in label:
 	    mplot2 = rrv_x.frame(RooFit.Title("correlation_pdf_log"), RooFit.Bins(rrv_x.getBins())) ;
 	    mplot3 = rrv_x.frame(RooFit.Title("correlation_pdf_alpha"), RooFit.Bins(rrv_x.getBins()))
@@ -1622,7 +1622,7 @@ objName ==objName_before ):
 
 	#this fit is not done here anymore
 	#instead, the pdfs are prepared for the fit using combine
-	if 'WJets0_' in label:
+	if '_WJets0' in label:
 	    #@#prepare functions for simultaneous fit in combine
 	    model_WJets_pdf	= self.workspace4fit_.pdf("model_pdf_WJets0_%s_mj"%self.channel)
 	    model_TTbar_pdf	= self.workspace4fit_.pdf("model_pdf_TTbar_%s_mj"%self.channel)
@@ -1672,8 +1672,8 @@ objName ==objName_before ):
 		    custom_mj.replaceArg(self.workspace4fit_.var('rrv_mass_j'),self.workspace4fit_.var('mj_%s'%region))
 		    m_pruned_pdf	= custom_mj.build()
 		    m_pruned_pdf.Print()
-		    getattr(self.workspace4limit_,'import')(m_pruned_pdf.clone('%s_mj_%s_pdf_%s'%(bkg,region,self.channel)),RooFit.RecycleConflictNodes())
-
+		    getattr(self.workspace4limit_,'import')(m_pruned_pdf.clone('mj_%s_%s_%s'%(bkg,region,self.channel)),RooFit.RecycleConflictNodes())
+	##FIXME import to workspace4fit_ here, import to workspace4limit_ in prepare_limit 
 	getattr(self.workspace4limit_,'import')(self.workspace4fit_.var('rrv_number_TTbar_%s_mj'%self.channel))
 	getattr(self.workspace4limit_,'import')(self.workspace4fit_.var('rrv_number_STop_%s_mj'%self.channel))
 	getattr(self.workspace4limit_,'import')(self.workspace4fit_.var('rrv_number_WW_%s_mj'%self.channel))
@@ -1834,7 +1834,6 @@ objName ==objName_before ):
             print "##################### decorrelated pdf ";
             model_pdf_deco.Print();
 
-
             ## import in the workspace and print the diagonalizerd pdf
             getattr(self.workspace4fit_,"import")(model_pdf_deco);
 
@@ -1906,7 +1905,6 @@ objName ==objName_before ):
         model.plotOn( mplot );# remove RooFit.VLines() in order to get right pull in the 1st bin
 
         ## Get the pull
-         
         mplot_pull = self.get_pull(rrv_mass_j, mplot);
         mplot.GetYaxis().SetRangeUser(1e-2,mplot.GetMaximum()*1.2);
 
@@ -1938,7 +1936,6 @@ objName ==objName_before ):
         
         rrv_number_sig	= RooRealVar("rrv_number"+label+"_"+self.channel+"_sig","rrv_number"+label+"_"+self.channel+"_sig",self.workspace4fit_.var("rrv_number"+label+"_"+self.channel+"_mj").getVal() * signalInt_val)
         getattr(self.workspace4limit_,'import')(rrv_number_sig)
-
 	
         ##### apply the correction of the mean and sigma from the ttbar control sample to the STop, TTbar and VV 
 	
@@ -2293,8 +2290,6 @@ objName ==objName_before ):
         self.fit_STop()
         print "________________________________________________________________________"
 
-	
-
         ### take the real data
         self.get_data()
         ### fit the WJets Normalization into the signal region -> no jet mass fluctuation has been done
@@ -2302,7 +2297,6 @@ objName ==objName_before ):
         ### fit data in the mlvj low sideband with two different models
         #self.fit_mlvj_in_Mj_sideband("_WJets1","_sb",self.MODEL_4_mlvj_alter,1)
         self.fit_mlvj_in_Mj_sideband("_WJets0","_sb",self.MODEL_4_mlvj,1)
-   
 
         ### Prepare the workspace and datacards     
         self.prepare_limit("sideband_correction_method1",1,0,0)
@@ -2313,11 +2307,11 @@ objName ==objName_before ):
 	    for i in results:
 		i.Print()
 	
-
     #################################################################################################
     #################################################################################################
 
     ##### Prepare the workspace for the limit and to store info to be printed in the datacard
+    ###import and rename everything needed in the final limit setting procedure
     def prepare_limit(self,mode, isTTbarFloating=0, isVVFloating=0, isSTopFloating=0):
 	
 	self.workspace4fit_.allPdfs().Print("V")
@@ -2329,11 +2323,14 @@ objName ==objName_before ):
 	    getattr(self.workspace4limit_,'import')(self.workspace4fit_.pdf("model_pdf_"+label+"_sb_"+self.channel+'_mlvj').clone('%s_mlvj_sb_%s'%(label,self.channel)))
 	    getattr(self.workspace4limit_,'import')(self.workspace4fit_.pdf("model_pdf_"+label+"_sig_"+self.channel+'_mlvj').clone('%s_mlvj_sig_%s'%(label,self.channel)))
 	    self.fix_Pdf(self.workspace4limit_.pdf('%s_mlvj_sig_%s'%(label,self.channel)), RooArgSet(rrv_x) ); 
-	    getattr(self.workspace4limit_,'import')(self.workspace4fit_.pdf('model_%s_%s_mj'%(label,self.channel)).clone('%s_mj_%s'%(label,self.channel)))
-	getattr(self.workspace4limit_,'import')(self.workspace4fit_.pdf("model_pdf_WJets0_sig_%s_undeco_mlvj"%self.channel).clone("WJets_mlvj_sig_%s"%self.channel),RooFit.RecycleConflictNodes())
+	    getattr(self.workspace4limit_,'import')(self.workspace4fit_.pdf('model_%s_%s_mj'%(label,self.channel)).clone('%s_mj_%s'%(label,self.channel)), RooFit.RecycleConflictNodes())
+	    getattr(self.workspace4limit_,'import')(self.workspace4fit_.var("rrv_number_"+label+"_"+self.channel+"_mj").clone('rrv_number_mj_%s_%s'%(label, self.channel)))
+	getattr(self.workspace4limit_,'import')(self.workspace4fit_.var("rrv_number_WJets0_"+self.channel+"_mj").clone('rrv_number_mj_WJets_%s'%self.channel))
+	getattr(self.workspace4limit_,'import')(self.workspace4fit_.pdf("model_pdf_WJets0_sb_"+self.channel+"_mlvj").clone("WJets_mlvj_sb_"+self.channel))
+	getattr(self.workspace4limit_,'import')(self.workspace4fit_.pdf("model_pdf_WJets0_sig_%s_undeco_mlvj"%self.channel).clone("WJets_mlvj_sig_%s"%self.channel), RooFit.RecycleConflictNodes())
 	getattr(self.workspace4limit_,'import')(self.workspace4fit_.pdf('model_WJets0_%s_mj'%self.channel).clone('WJets_mj_%s'%self.channel))
 
-	#get m_pruned and mlvj_sb datasets
+	#get m_pruned and mlvj datasets
 	getattr(self.workspace4limit_,'import')(self.workspace4fit_.data("rdataset_data_sb_lo_%s_mlvj"%self.channel))
 	getattr(self.workspace4limit_,"import")(self.workspace4fit_.data("rdataset_data_sig_%s_mlvj"%(self.channel)).Clone("data_obs_%s_%s"%(self.channel,self.wtagger_label)))
 	getattr(self.workspace4limit_,'import')(self.workspace4fit_.data('dataset_mj_sb_lo'))
