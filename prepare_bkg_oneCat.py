@@ -1620,59 +1620,6 @@ objName ==objName_before ):
 #testplot	
 ####################
 
-	#this fit is not done here anymore
-	#instead, the pdfs are prepared for the fit using combine
-	if '_WJets0' in label:
-	    #@#prepare functions for simultaneous fit in combine
-	    model_WJets_pdf	= self.workspace4fit_.pdf("model_pdf_WJets0_%s_mj"%self.channel)
-	    model_TTbar_pdf	= self.workspace4fit_.pdf("model_pdf_TTbar_%s_mj"%self.channel)
-	    model_WW_pdf	= self.workspace4fit_.pdf("model_pdf_WW_%s_mj"%self.channel)
-	    model_WZ_pdf	= self.workspace4fit_.pdf("model_pdf_WZ_%s_mj"%self.channel)
-	    model_STop_pdf	= self.workspace4fit_.pdf('model_pdf_STop_%s_mj'%self.channel)
-	    bkgs		= ['WJets','TTbar','WW','WZ','STop']
-	    mj_bkg_pdfs		= {'WJets':model_WJets_pdf, 'TTbar':model_TTbar_pdf, 'WW':model_WW_pdf, 'WZ' : model_WZ_pdf, 'STop':model_STop_pdf}
-	    ras_mass_j		= RooArgSet(self.workspace4fit_.var('rrv_mass_j'))
-	    for bkg in bkgs:
-		getattr(self.workspace4limit_,'import')(mj_bkg_pdfs[bkg].clone('m_j_%s_%s'%(bkg,self.channel)))
-	    for region in ['sig','sb_lo','sb_hi']:
-		if 'sb' in region:
-		    int_range	= region
-		else:
-		    int_range	= 'sig'
-		for bkg in bkgs:
-		    custom_mj		= RooCustomizer(mj_bkg_pdfs[bkg],'%s_mj_%s'%(bkg,region))
-		    int_all		= mj_bkg_pdfs[bkg].createIntegral(ras_mass_j,ras_mass_j,int_range).getVal()
-		    #need to rescale fractions (rrv_frac_...) for different regions
-		    if bkg=='TTbar':
-			old_frac	= self.workspace4fit_.var('rrv_frac_TTbar_'+self.channel)
-			new_frac	= RooRealVar('rrv_frac_'+region+'_'+bkg+'_'+self.channel,'rrv_frac_'+region+'_'+bkg+'_'+self.channel,0)
-			int_gaus	= self.workspace4fit_.pdf('gaus1_TTbar_'+self.channel).createIntegral(ras_mass_j,ras_mass_j,int_range).getVal()*(1-old_frac.getVal())
-			int_erfexp	= self.workspace4fit_.pdf('erfexp_TTbar_'+self.channel+'_mj').createIntegral(ras_mass_j,ras_mass_j,int_range).getVal()*old_frac.getVal()
-			new_frac.setVal(int_erfexp/(int_gaus+int_erfexp))
-			custom_mj.replaceArg(old_frac,new_frac)
-		    elif bkg=='STop':
-			old_frac	= self.workspace4fit_.var('rrv_high_STop_'+self.channel)
-			new_frac	= RooRealVar('rrv_frac_'+region+'_'+bkg+'_'+self.channel,'rrv_frac_'+region+'_'+bkg+'_'+self.channel,0)
-			int_gaus	= self.workspace4fit_.pdf('gaus_STop_'+self.channel).createIntegral(ras_mass_j,ras_mass_j,int_range).getVal()*(1-old_frac.getVal())
-			int_exp	= self.workspace4fit_.pdf('exp_STop_'+self.channel).createIntegral(ras_mass_j,ras_mass_j,int_range).getVal()*old_frac.getVal()
-			new_frac.setVal(int_exp/(int_gaus+int_exp))
-			custom_mj.replaceArg(old_frac,new_frac)
-		    elif bkg=='WW' or bkg=='WZ':
-			old_frac1	= self.workspace4fit_.var('rrv_frac1_%s_'%bkg+self.channel)
-			new_frac11	= RooRealVar('rrv_frac11_'+region+'_'+bkg+'_'+self.channel,'rrv_frac11_'+region+'_'+bkg+'_'+self.channel,0)
-			int_gaus1	= self.workspace4fit_.pdf('gaus1_%s_'%bkg+self.channel).createIntegral(ras_mass_j,ras_mass_j,int_range).getVal()*old_frac1.getVal()
-			int_gaus2	= self.workspace4fit_.pdf('gaus2_%s_'%bkg+self.channel).createIntegral(ras_mass_j,ras_mass_j,int_range).getVal()*(1-old_frac1.getVal())
-			new_frac11.setVal(((int_gaus1)/(int_gaus1+int_gaus2)))
-
-			custom_2gaus	= RooCustomizer(self.workspace4fit_.pdf("model_pdf"+label+"_"+self.channel+"_mj"),'2gaus1_%s_'%bkg+self.channel)
-			custom_2gaus.replaceArg(old_frac1,new_frac11)
-			VV_model_tmp	= custom_2gaus.build()
-			custom_mj	= RooCustomizer(VV_model_tmp,'%s_mj_%s'%(bkg,region))
-		    			
-		    custom_mj.replaceArg(self.workspace4fit_.var('rrv_mass_j'),self.workspace4fit_.var('mj_%s'%region))
-		    m_pruned_pdf	= custom_mj.build()
-		    m_pruned_pdf.Print()
-		    getattr(self.workspace4limit_,'import')(m_pruned_pdf.clone('mj_%s_%s_%s'%(bkg,region,self.channel)),RooFit.RecycleConflictNodes())
 	##FIXME import to workspace4fit_ here, import to workspace4limit_ in prepare_limit 
 	getattr(self.workspace4limit_,'import')(self.workspace4fit_.var('rrv_number_TTbar_%s_mj'%self.channel))
 	getattr(self.workspace4limit_,'import')(self.workspace4fit_.var('rrv_number_STop_%s_mj'%self.channel))
@@ -2199,7 +2146,6 @@ objName ==objName_before ):
     def get_data(self):
         print "############### get_data ########################"
         self.get_mj_and_mlvj_dataset(self.file_data,"_data")
-        #self.get_mj_and_mlvj_dataset(self.file_data,"_data", "Mjsoftdrop")
         getattr(self.workspace4limit_,"import")(self.workspace4fit_.var("rrv_number_dataset_sig_data_%s_mlvj"%(self.channel)).clone("observation_for_counting"))
 
     #################################################################################################
@@ -2313,6 +2259,47 @@ objName ==objName_before ):
     ##### Prepare the workspace for the limit and to store info to be printed in the datacard
     ###import and rename everything needed in the final limit setting procedure
     def prepare_limit(self,mode, isTTbarFloating=0, isVVFloating=0, isSTopFloating=0):
+
+        #@#prepare functions for simultaneous fit in combine
+        #all pdfs are splitted into sb and sig regions (only in mj spectrum, mlvj is done in the signal code)
+        getattr(self.workspace4fit_,'import')(self.workspace4fit_.pdf("model_pdf_WJets0_%s_mj"%self.channel).clone("model_pdf_WJets_%s_mj"%self.channel))
+        bkgs		= ['WJets','TTbar','WW','WZ','STop']
+        ras_mass_j	= RooArgSet(self.workspace4fit_.var('rrv_mass_j'))
+        for bkg in bkgs:
+            getattr(self.workspace4limit_,'import')(self.workspace4fit_.pdf('model_pdf_%s_%s_mj'%(bkg,self.channel)).clone('mj_%s_%s'%(bkg,self.channel)))
+        for region in ['sig','sb_lo','sb_hi']:
+            for bkg in bkgs:
+                custom_mj	= RooCustomizer(self.workspace4fit_.pdf('model_pdf_%s_%s_mj'%(bkg,self.channel)),'%s_mj_%s'%(bkg,region))
+                int_all		= self.workspace4fit_.pdf('model_pdf_%s_%s_mj'%(bkg,self.channel)).createIntegral(ras_mass_j,ras_mass_j,region).getVal()
+                #need to rescale fractions (rrv_frac_...) for different regions
+                if bkg=='TTbar':
+	            old_frac	= self.workspace4fit_.var('rrv_frac_TTbar_'+self.channel)
+	            new_frac	= RooRealVar('rrv_frac_'+region+'_'+bkg+'_'+self.channel,'rrv_frac_'+region+'_'+bkg+'_'+self.channel,0)
+	            int_gaus	= self.workspace4fit_.pdf('gaus1_TTbar_'+self.channel).createIntegral(ras_mass_j,ras_mass_j,region).getVal()*(1-old_frac.getVal())
+	            int_erfexp	= self.workspace4fit_.pdf('erfexp_TTbar_'+self.channel+'_mj').createIntegral(ras_mass_j,ras_mass_j,region).getVal()*old_frac.getVal()
+	            new_frac.setVal(int_erfexp/(int_gaus+int_erfexp))
+	            custom_mj.replaceArg(old_frac,new_frac)
+                elif bkg=='STop':
+	            old_frac	= self.workspace4fit_.var('rrv_high_STop_'+self.channel)
+	            new_frac	= RooRealVar('rrv_frac_'+region+'_'+bkg+'_'+self.channel,'rrv_frac_'+region+'_'+bkg+'_'+self.channel,0)
+	            int_gaus	= self.workspace4fit_.pdf('gaus_STop_'+self.channel).createIntegral(ras_mass_j,ras_mass_j,region).getVal()*(1-old_frac.getVal())
+	            int_exp	= self.workspace4fit_.pdf('exp_STop_'+self.channel).createIntegral(ras_mass_j,ras_mass_j,region).getVal()*old_frac.getVal()
+	            new_frac.setVal(int_exp/(int_gaus+int_exp))
+	            custom_mj.replaceArg(old_frac,new_frac)
+                elif bkg=='WW' or bkg=='WZ':
+	            old_frac1	= self.workspace4fit_.var('rrv_frac1_%s_'%bkg+self.channel)
+	            new_frac11	= RooRealVar('rrv_frac11_'+region+'_'+bkg+'_'+self.channel,'rrv_frac11_'+region+'_'+bkg+'_'+self.channel,0)
+	            int_gaus1	= self.workspace4fit_.pdf('gaus1_%s_'%bkg+self.channel).createIntegral(ras_mass_j,ras_mass_j,region).getVal()*old_frac1.getVal()
+	            int_gaus2	= self.workspace4fit_.pdf('gaus2_%s_'%bkg+self.channel).createIntegral(ras_mass_j,ras_mass_j,region).getVal()*(1-old_frac1.getVal())
+	            new_frac11.setVal(((int_gaus1)/(int_gaus1+int_gaus2)))
+	            #cust_2gaus	= RooCustomizer(self.workspace4fit_.pdf('model_pdf_%s_%s_mj'%(bkg,self.channel),"2gaus1_"+bkg+"_"+self.channel)
+	            custom_mj.replaceArg(old_frac1,new_frac11)
+	            #VV_tmp	= cust_2gaus.build()
+	            #custom_mj	= RooCustomizer(VV_tmp,'%s_mj_%s'%(bkg,region))
+                custom_mj.replaceArg(self.workspace4fit_.var('rrv_mass_j'),self.workspace4fit_.var('mj_%s'%region))
+                m_pruned_pdf	= custom_mj.build()
+                m_pruned_pdf.Print()
+                getattr(self.workspace4limit_,'import')(m_pruned_pdf.clone('mj_%s_%s_%s'%(bkg,region,self.channel)),RooFit.RecycleConflictNodes())
 	
 	self.workspace4fit_.allPdfs().Print("V")
         print "####################### prepare_limit for %s method ####################"%(mode);
@@ -2323,7 +2310,6 @@ objName ==objName_before ):
 	    getattr(self.workspace4limit_,'import')(self.workspace4fit_.pdf("model_pdf_"+label+"_sb_"+self.channel+'_mlvj').clone('%s_mlvj_sb_%s'%(label,self.channel)))
 	    getattr(self.workspace4limit_,'import')(self.workspace4fit_.pdf("model_pdf_"+label+"_sig_"+self.channel+'_mlvj').clone('%s_mlvj_sig_%s'%(label,self.channel)))
 	    self.fix_Pdf(self.workspace4limit_.pdf('%s_mlvj_sig_%s'%(label,self.channel)), RooArgSet(rrv_x) ); 
-	    getattr(self.workspace4limit_,'import')(self.workspace4fit_.pdf('model_%s_%s_mj'%(label,self.channel)).clone('%s_mj_%s'%(label,self.channel)), RooFit.RecycleConflictNodes())
 	    getattr(self.workspace4limit_,'import')(self.workspace4fit_.var("rrv_number_"+label+"_"+self.channel+"_mj").clone('rrv_number_mj_%s_%s'%(label, self.channel)))
 	getattr(self.workspace4limit_,'import')(self.workspace4fit_.var("rrv_number_WJets0_"+self.channel+"_mj").clone('rrv_number_mj_WJets_%s'%self.channel))
 	getattr(self.workspace4limit_,'import')(self.workspace4fit_.pdf("model_pdf_WJets0_sb_"+self.channel+"_mlvj").clone("WJets_mlvj_sb_"+self.channel))
@@ -2331,14 +2317,12 @@ objName ==objName_before ):
 	getattr(self.workspace4limit_,'import')(self.workspace4fit_.pdf('model_WJets0_%s_mj'%self.channel).clone('WJets_mj_%s'%self.channel))
 
 	#get m_pruned and mlvj datasets
-	getattr(self.workspace4limit_,'import')(self.workspace4fit_.data("rdataset_data_sb_lo_%s_mlvj"%self.channel))
-	getattr(self.workspace4limit_,"import")(self.workspace4fit_.data("rdataset_data_sig_%s_mlvj"%(self.channel)).Clone("data_obs_%s_%s"%(self.channel,self.wtagger_label)))
+	getattr(self.workspace4limit_,'import')(self.workspace4fit_.data('rdataset_data_sb_lo_%s_mlvj'%self.channel))
+	getattr(self.workspace4limit_,'import')(self.workspace4fit_.data('rdataset_data_sig_%s_mlvj'%(self.channel)).Clone('data_obs_%s_%s'%(self.channel,self.wtagger_label)))
 	getattr(self.workspace4limit_,'import')(self.workspace4fit_.data('dataset_mj_sb_lo'))
 	getattr(self.workspace4limit_,'import')(self.workspace4fit_.data('dataset_mj_sb_hi'))
 	getattr(self.workspace4limit_,'import')(self.workspace4fit_.data('dataset_mj_sig'))	
-	getattr(self.workspace4limit_,'import')(self.workspace4fit_.data("rdataset_data_%s_mj"%self.channel))
-
-        getattr(self.workspace4limit_,"import")(self.workspace4fit_.var("rrv_mass_lvj"));
+	getattr(self.workspace4limit_,'import')(self.workspace4fit_.data('rdataset_data_%s_mj'%self.channel))
 
         if isTTbarFloating:
          getattr(self.workspace4limit_,"import")(self.workspace4fit_.pdf("model_pdf_TTbar_sig_%s_mlvj_Deco_TTbar_sig_%s_%s_mlvj_13TeV"%(self.channel, self.channel, self.wtagger_label)).clone("TTbar_%s_%s"%(self.channel,self.wtagger_label)))
@@ -2387,6 +2371,7 @@ objName ==objName_before ):
         self.save_workspace_to_file();
 
     #### Method used to print the general format of the datacard for both counting and unbinned analysis
+    #### FIXME not updated!
     def print_limit_datacard(self, mode, params_list=[]):
         print "############## print_limit_datacard for %s ################"%(mode)
         if not (mode == "unbin" or mode == "counting"):
@@ -2478,7 +2463,6 @@ objName ==objName_before ):
         model_pdf_WZ.Print();
         model_pdf_TTbar.Print();
         model_pdf_STop.Print();
-
 	
 	#FIXME number not corrected for events with MWW>3500!
         #rrv_number_WJets  = workspace.var("rrv_number_WJets0_"+self.channel+"_sig");
