@@ -13,7 +13,6 @@ from optparse import OptionParser
 import CMS_lumi, tdrstyle
 from array import array
 
-import profile, time
 
 from ROOT import gROOT, TPaveLabel, gStyle, gSystem, TGaxis, TStyle, TLatex, TString, TF1,TFile,TLine, TLegend, TH1D,TH2D,THStack,TChain, TCanvas, TMatrixDSym, TMath, TText, TPad, RooFit, RooArgSet, RooArgList, RooNLLVar, RooAddition, RooProduct, RooConstraintSum, RooCustomizer, RooMinuit, RooArgSet, RooAbsData, RooAbsPdf, RooAbsReal, RooAddPdf, RooWorkspace, RooExtendPdf,RooCBShape, RooLandau, RooFFTConvPdf, RooGaussian, RooBifurGauss, RooArgusBG,RooDataSet, RooExponential,RooBreitWigner, RooVoigtian, RooNovosibirsk, RooRealVar,RooFormulaVar, RooDataHist, RooHist,RooCategory, RooChebychev, RooSimultaneous, RooGenericPdf,RooConstVar, RooKeysPdf, RooHistPdf, RooEffProd, RooProdPdf, TIter, kTRUE, kFALSE, kGray, kRed, kDashed, kGreen,kAzure, kOrange, kBlack,kBlue,kYellow,kCyan, kMagenta, kWhite
 
@@ -1885,7 +1884,6 @@ objName ==objName_before ):
         getattr(self.workspace4limit_,'import')(rrv_number_sig)
 	
         ##### apply the correction of the mean and sigma from the ttbar control sample to the STop, TTbar and VV 
-	
         par=parameters_list.createIterator();
         par.Reset();
         param=par.Next()
@@ -1957,9 +1955,9 @@ objName ==objName_before ):
 		
 		if True:#'data' in label:
 		  ### datasets for simultaneous fit with combine
-		  dataset_mj_sb_lo	= RooDataSet('dataset_mj_sb_lo','dataset_mj_sb_lo',RooArgSet(rrv_mass_j_sb_lo, rrv_mass_lvj, rrv_weight), RooFit.WeightVar(rrv_weight))
-		  dataset_mj_sb_hi	= RooDataSet('dataset_mj_sb_hi','dataset_mj_sb_hi',RooArgSet(rrv_mass_j_sb_hi, rrv_mass_lvj, rrv_weight), RooFit.WeightVar(rrv_weight))
-		  dataset_mj_sig	= RooDataSet('dataset_mj_sig','dataset_mj_sig',RooArgSet(rrv_mass_j_sig, rrv_mass_lvj, rrv_weight), RooFit.WeightVar(rrv_weight))
+		  dataset_mj_sb_lo	= RooDataSet('dataset_mj_sb_lo_%s'%self.channel,'dataset_mj_sb_lo_%s'%self.channel,RooArgSet(rrv_mass_j_sb_lo, rrv_mass_lvj, rrv_weight), RooFit.WeightVar(rrv_weight))
+		  dataset_mj_sb_hi	= RooDataSet('dataset_mj_sb_hi_%s'%self.channel,'dataset_mj_sb_hi_%s'%self.channel,RooArgSet(rrv_mass_j_sb_hi, rrv_mass_lvj, rrv_weight), RooFit.WeightVar(rrv_weight))
+		  dataset_mj_sig	= RooDataSet('dataset_mj_sig_%s'%self.channel,'dataset_mj_sig_%s'%self.channel,RooArgSet(rrv_mass_j_sig, rrv_mass_lvj, rrv_weight), RooFit.WeightVar(rrv_weight))
 
 
 		### categorize the event in sideband and signal region --> combined dataset 
@@ -2134,9 +2132,9 @@ objName ==objName_before ):
 	getattr(self.workspace4fit_,'import')(w_tmp.data("rdataset"+label+"_"+self.channel+"_mj"))
 	getattr(self.workspace4fit_,'import')(w_tmp.data("rdataset4fit"+label+"_"+self.channel+"_mj"))
 	if 'data' in label:
-	  getattr(self.workspace4fit_,'import')(w_tmp.data("dataset_mj_sb_lo"))
-	  getattr(self.workspace4fit_,'import')(w_tmp.data("dataset_mj_sb_hi"))
-	  getattr(self.workspace4fit_,'import')(w_tmp.data("dataset_mj_sig"))
+	  getattr(self.workspace4fit_,'import')(w_tmp.data("dataset_mj_sb_lo_%s"%self.channel))
+	  getattr(self.workspace4fit_,'import')(w_tmp.data("dataset_mj_sb_hi_%s"%self.channel))
+	  getattr(self.workspace4fit_,'import')(w_tmp.data("dataset_mj_sig_%s"%self.channel))
 	fileIn.Close()
 
     #################################################################################################
@@ -2299,7 +2297,7 @@ objName ==objName_before ):
                 custom_mj.replaceArg(self.workspace4fit_.var('rrv_mass_j'),self.workspace4fit_.var('mj_%s'%region))
                 m_pruned_pdf	= custom_mj.build()
                 m_pruned_pdf.Print()
-                getattr(self.workspace4limit_,'import')(m_pruned_pdf.clone('mj_%s_%s_%s'%(bkg,region,self.channel)),RooFit.RecycleConflictNodes())
+                getattr(self.workspace4limit_,'import')(m_pruned_pdf.clone('%s_mj_%s_%s'%(bkg,region,self.channel)),RooFit.RecycleConflictNodes())
 	
 	self.workspace4fit_.allPdfs().Print("V")
         print "####################### prepare_limit for %s method ####################"%(mode);
@@ -2319,9 +2317,9 @@ objName ==objName_before ):
 	#get m_pruned and mlvj datasets
 	getattr(self.workspace4limit_,'import')(self.workspace4fit_.data('rdataset_data_sb_lo_%s_mlvj'%self.channel))
 	getattr(self.workspace4limit_,'import')(self.workspace4fit_.data('rdataset_data_sig_%s_mlvj'%(self.channel)).Clone('data_obs_%s_%s'%(self.channel,self.wtagger_label)))
-	getattr(self.workspace4limit_,'import')(self.workspace4fit_.data('dataset_mj_sb_lo'))
-	getattr(self.workspace4limit_,'import')(self.workspace4fit_.data('dataset_mj_sb_hi'))
-	getattr(self.workspace4limit_,'import')(self.workspace4fit_.data('dataset_mj_sig'))	
+	getattr(self.workspace4limit_,'import')(self.workspace4fit_.data('dataset_mj_sb_lo_%s'%self.channel))
+	getattr(self.workspace4limit_,'import')(self.workspace4fit_.data('dataset_mj_sb_hi_%s'%self.channel))
+	getattr(self.workspace4limit_,'import')(self.workspace4fit_.data('dataset_mj_sig_%s'%self.channel))	
 	getattr(self.workspace4limit_,'import')(self.workspace4fit_.data('rdataset_data_%s_mj'%self.channel))
 
         if isTTbarFloating:
@@ -2369,6 +2367,9 @@ objName ==objName_before ):
 		    
         ### Save the workspace
         self.save_workspace_to_file();
+
+    #################################################################################################
+    #################################################################################################
 
     #### Method used to print the general format of the datacard for both counting and unbinned analysis
     #### FIXME not updated!
@@ -2435,10 +2436,16 @@ objName ==objName_before ):
 	#@# write WJets normalisation 
 	datacard_out.write("\n #WJets number of events sideband region: %s"%self.workspace4fit_.var("rrv_number_WJets0_in_mj_sb_region_from_fitting_%s"%self.channel).getVal())
 
+    #################################################################################################
+    #################################################################################################
+
     #### Method used in order to save the workspace in a output root file
     def save_workspace_to_file(self):
         self.workspace4limit_.writeToFile(self.file_rlt_root);
         self.file_out.close()
+
+    #################################################################################################
+    #################################################################################################
 
     #### Read the final workspace and produce the latest plots
     def read_workspace(self, logy=0):
@@ -2544,6 +2551,9 @@ objName ==objName_before ):
         parameters_list = RooArgList();
         self.draw_canvas_with_pull( rrv_x,datahist,mplot, mplot_pull,ndof,parameters_list,"%s/m_lvj_fitting/"%(self.plotsDir),"check_workspace_for_limit","",0,1,0,1);
     
+    #################################################################################################
+    #################################################################################################
+
 ### funtion to run the complete alpha analysis
 def pre_limit_sb_correction(method, channel, in_mj_min=40, in_mj_max=150, in_mlvj_min=900, in_mlvj_max=3500, fit_model="ExpN", fit_model_alter="ExpTail"): 
 
@@ -2552,12 +2562,13 @@ def pre_limit_sb_correction(method, channel, in_mj_min=40, in_mj_max=150, in_mlv
     boostedW_fitter=doFit_wj_and_wlvj(channel,in_mj_min,in_mj_max,in_mlvj_min,in_mlvj_max,fit_model,fit_model_alter);
     getattr(boostedW_fitter,"analysis_sideband_correction_%s"%(method) )();
 
+    #################################################################################################
+    #################################################################################################
 
 #### Main Code
 if __name__ == '__main__':
 
     channel=options.channel;
             
-    #pre_limit_sb_correction("method1",channel,40,150,options.mlvj_lo,3500,"ExpN","ExpTail")
-    profile.run('pre_limit_sb_correction("method1",channel,40,150,options.mlvj_lo,3500,"ExpN","ExpTail")')
+    pre_limit_sb_correction("method1",channel,40,150,options.mlvj_lo,3500,"ExpN","ExpTail")
 
