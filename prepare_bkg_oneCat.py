@@ -2197,7 +2197,7 @@ objName ==objName_before ):
         ### Build the dataset
         self.get_mj_and_mlvj_dataset(self.file_TTbar_mc,"_TTbar")# to get the shape of m_lvj
         self.fit_mj_single_MC(self.file_TTbar_mc,"_TTbar","2Gaus_ErfExp");
-        self.fit_mlvj_model_single_MC(self.file_TTbar_mc,"_TTbar","_sb","ExpTail");
+        self.fit_mlvj_model_single_MC(self.file_TTbar_mc,"_TTbar","_sb","ExpTail",1);
         self.fit_mlvj_model_single_MC(self.file_TTbar_mc,"_TTbar","_sig","ExpTail",1, 0, 1);
         print "________________________________________________________________________"
 
@@ -2294,10 +2294,7 @@ objName ==objName_before ):
                     int_gaus1        = self.workspace4fit_.pdf('gaus1_%s_'%bkg+self.channel).createIntegral(ras_mass_j,ras_mass_j,region).getVal()*old_frac1.getVal()
                     int_gaus2        = self.workspace4fit_.pdf('gaus2_%s_'%bkg+self.channel).createIntegral(ras_mass_j,ras_mass_j,region).getVal()*(1-old_frac1.getVal())
                     new_frac11.setVal(((int_gaus1)/(int_gaus1+int_gaus2)))
-                    #cust_2gaus        = RooCustomizer(self.workspace4fit_.pdf('model_pdf_%s_%s_mj'%(bkg,self.channel),"2gaus1_"+bkg+"_"+self.channel)
                     custom_mj.replaceArg(old_frac1,new_frac11)
-                    #VV_tmp        = cust_2gaus.build()
-                    #custom_mj        = RooCustomizer(VV_tmp,'%s_mj_%s'%(bkg,region))
                 custom_mj.replaceArg(self.workspace4fit_.var('rrv_mass_j'),self.workspace4fit_.var('mj_%s'%region))
                 m_pruned_pdf        = custom_mj.build()
                 m_pruned_pdf.Print()
@@ -2307,10 +2304,15 @@ objName ==objName_before ):
         print "####################### prepare_limit for %s method ####################"%(mode);
         
         rrv_x = self.workspace4limit_.var("rrv_mass_lvj");
-        
-        for label in ['TTbar','STop','WW','WZ']:
+
+        #take decorellated ttbar
+        getattr(self.workspace4limit_,'import')(self.workspace4fit_.pdf("model_pdf_TTbar_sb_%s_mlvj_Deco_TTbar_sb_%s_HPV_mlvj_13TeV"%(self.channel,self.channel)).clone('TTbar_mlvj_sb_%s'%self.channel))
+        getattr(self.workspace4limit_,'import')(self.workspace4fit_.pdf("model_pdf_TTbar_sig_%s_mlvj_Deco_TTbar_sig_%s_HPV_mlvj_13TeV"%(self.channel,self.channel)).clone('TTbar_mlvj_sig_%s'%self.channel))
+        #normal pdfs for rest
+        for label in ['STop','WW','WZ']:
             getattr(self.workspace4limit_,'import')(self.workspace4fit_.pdf("model_pdf_"+label+"_sb_"+self.channel+'_mlvj').clone('%s_mlvj_sb_%s'%(label,self.channel)))
             getattr(self.workspace4limit_,'import')(self.workspace4fit_.pdf("model_pdf_"+label+"_sig_"+self.channel+'_mlvj').clone('%s_mlvj_sig_%s'%(label,self.channel)))
+        for label in ['TTbar','STop','WW','WZ']:
             self.fix_Pdf(self.workspace4limit_.pdf('%s_mlvj_sig_%s'%(label,self.channel)), RooArgSet(rrv_x) ); 
             getattr(self.workspace4limit_,'import')(self.workspace4fit_.var("rrv_number_"+label+"_"+self.channel+"_mj").clone('rrv_number_mj_%s_%s'%(label, self.channel)))
         getattr(self.workspace4limit_,'import')(self.workspace4fit_.var("rrv_number_WJets0_"+self.channel+"_mj").clone('rrv_number_mj_WJets_%s'%self.channel))
@@ -2376,74 +2378,6 @@ objName ==objName_before ):
     #################################################################################################
     #################################################################################################
 
-    #### Method used to print the general format of the datacard for both counting and unbinned analysis
-    #### FIXME not updated!
-    def print_limit_datacard(self, mode, params_list=[]):
-        print "############## print_limit_datacard for %s ################"%(mode)
-        if not (mode == "unbin" or mode == "counting"):
-            print "print_limit_datacard use wrong mode: %s"%(mode);raw_input("ENTER");
-
-        ### open the datacard    
-        datacard_out = open(getattr(self,"file_datacard_%s"%(mode)),"w");
-
-        ### start to print inside 
-        datacard_out.write( "imax 1" )
-        datacard_out.write( "\njmax 4" )
-        datacard_out.write( "\nkmax *" )
-        datacard_out.write( "\n--------------- ")
-
-        if mode == "unbin":
-            fnOnly = ntpath.basename(self.file_rlt_root) ## workspace for limit --> output file for the workspace
-                
-            datacard_out.write("\nshapes WJets  CMS_%s1J%s  %s %s:$PROCESS_%s_%s"%(self.channel,self.wtagger_label,fnOnly,self.workspace4limit_.GetName(), self.channel, self.wtagger_label));
-            datacard_out.write("\nshapes TTbar  CMS_%s1J%s  %s %s:$PROCESS_%s_%s"%(self.channel,self.wtagger_label,fnOnly,self.workspace4limit_.GetName(), self.channel, self.wtagger_label));
-            datacard_out.write("\nshapes STop   CMS_%s1J%s  %s %s:$PROCESS_%s_%s"%(self.channel,self.wtagger_label,fnOnly,self.workspace4limit_.GetName(), self.channel, self.wtagger_label));
-            datacard_out.write("\nshapes VV     CMS_%s1J%s  %s %s:$PROCESS_%s_%s"%(self.channel,self.wtagger_label,fnOnly,self.workspace4limit_.GetName(), self.channel, self.wtagger_label));
-            datacard_out.write("\nshapes data_obs   CMS_%s1J%s  %s %s:$PROCESS_%s_%s"%(self.channel,self.wtagger_label,fnOnly,self.workspace4limit_.GetName(), self.channel, self.wtagger_label));
-            datacard_out.write( "\n--------------- ")
-            
-        datacard_out.write( "\nbin CMS_%s1J%s "%(self.channel,self.wtagger_label));    
-        if mode == "unbin":
-            datacard_out.write( "\nobservation %0.2f "%(self.workspace4limit_.data("data_obs_%s_%s"%(self.channel,self.wtagger_label)).sumEntries()) )
-        if mode == "counting":
-            datacard_out.write( "\nobservation %0.2f "%(self.workspace4limit_.var("observation_for_counting").getVal()) )
-            
-        datacard_out.write( "\n------------------------------" );
-
-        datacard_out.write( "\nbin CMS_%s1J%s CMS_%s1J%s CMS_%s1J%s CMS_%s1J%s CMS_%s1J%s"%(self.channel,self.wtagger_label,self.channel,self.wtagger_label,self.channel,self.wtagger_label,self.channel,self.wtagger_label,self.channel,self.wtagger_label));
-
-        datacard_out.write( "\nprocess -1 1 2 3 4" );
-        datacard_out.write( "\n-------------------------------- " )
-
- 
-        ### WJets Normalization from data fit -> data driven
-        if self.number_WJets_insideband >0:
-            datacard_out.write( "\nCMS_WJ_norm_13TeV gmN %0.3f %0.3f - - -"%(self.number_WJets_insideband, getattr(self, "datadriven_alpha_WJets_%s"%(mode)) ) )
-        else:
-            datacard_out.write( "\nCMS_WJ_norm_%s_%s_13TeV lnN - %0.3f - - -"%(self.channel, self.wtagger_label, 1+ self.workspace4limit_.var('rate_WJets_for_unbin').getError()/self.workspace4limit_.var('rate_WJets_for_unbin').getVal() ) );
-
-        if self.channel == "mu":
-            self.channel_short = "m"
-        elif self.channel =="el":
-            self.channel_short = "e"
-        elif self.channel =="em":
-            self.channel_short = "em"
-
-        ### print shapes parameter to be taken int account
-        if mode == "unbin":
-            for ipar in params_list:
-              print "Name %s",ipar.GetName();
-              if TString(ipar.GetName()).Contains("Deco_TTbar_sig"):
-               datacard_out.write( "\n%s param %0.1f %0.1f "%( ipar.GetName(), ipar.getVal(), ipar.getError() ) )
-              else:
-               datacard_out.write( "\n%s param %0.1f %0.1f "%( ipar.GetName(), ipar.getVal(), ipar.getError() ) )
-
-        #@# write WJets normalisation 
-        datacard_out.write("\n #WJets number of events sideband region: %s"%self.workspace4fit_.var("rrv_number_WJets0_in_mj_sb_region_from_fitting_%s"%self.channel).getVal())
-
-    #################################################################################################
-    #################################################################################################
-
     #### Method used in order to save the workspace in a output root file
     def save_workspace_to_file(self):
         self.workspace4limit_.writeToFile(self.file_rlt_root);
@@ -2476,7 +2410,6 @@ objName ==objName_before ):
         model_pdf_TTbar.Print();
         model_pdf_STop.Print();
         
-        #FIXME number not corrected for events with MWW>3500!
         #rrv_number_WJets  = workspace.var("rrv_number_WJets0_"+self.channel+"_sig");
         rrv_number_WJets  = workspace.var("rrv_number_WJets0_mj_sig_from_fit_%s"%self.channel)
         rrv_number_WW     = workspace.var("rrv_number_WW_"+self.channel+"_sig");
