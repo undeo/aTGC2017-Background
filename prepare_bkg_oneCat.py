@@ -1433,7 +1433,7 @@ objName ==objName_before ):
 
         print "############### Fit mj Normalization ##################"
         ## fit the two version of pdf for Wjets shape if available
-        self.fit_WJetsNormalization_in_Mj_sig("_WJets0");
+        #self.fit_WJetsNormalization_in_Mj_sig("_WJets0");
         ###FIXME alternative function should be taken into account?
         #self.fit_WJetsNormalization_in_Mj_sig("_WJets1");
 
@@ -2314,8 +2314,8 @@ objName ==objName_before ):
             getattr(self.workspace4limit_,'import')(self.workspace4fit_.pdf("model_pdf_"+label+"_sig_"+self.channel+'_mlvj').clone('%s_mlvj_sig_%s'%(label,self.channel)))
         for label in ['TTbar','STop','WW','WZ']:
             self.fix_Pdf(self.workspace4limit_.pdf('%s_mlvj_sig_%s'%(label,self.channel)), RooArgSet(rrv_x) ); 
-            getattr(self.workspace4limit_,'import')(self.workspace4fit_.var("rrv_number_"+label+"_"+self.channel+"_mj").clone('rrv_number_mj_%s_%s'%(label, self.channel)))
-        getattr(self.workspace4limit_,'import')(self.workspace4fit_.var("rrv_number_WJets0_"+self.channel+"_mj").clone('rrv_number_mj_WJets_%s'%self.channel))
+            getattr(self.workspace4limit_,'import')(self.workspace4fit_.var("rrv_number_"+label+"_"+self.channel+"_mj").clone('norm_%s_%s'%(label, self.channel)))
+        getattr(self.workspace4limit_,'import')(self.workspace4fit_.var("rrv_number_WJets0_"+self.channel+"_mj").clone('norm_WJets_%s'%self.channel))
         getattr(self.workspace4limit_,'import')(self.workspace4fit_.pdf("model_pdf_WJets0_sb_"+self.channel+"_mlvj").clone("WJets_mlvj_sb_"+self.channel))
         getattr(self.workspace4limit_,'import')(self.workspace4fit_.pdf("model_pdf_WJets0_sig_%s_undeco_mlvj"%self.channel).clone("WJets_mlvj_sig_%s"%self.channel), RooFit.RecycleConflictNodes())
         self.workspace4limit_.pdf("WJets_mlvj_sig_%s"%self.channel).Print()
@@ -2410,12 +2410,14 @@ objName ==objName_before ):
         model_pdf_TTbar.Print();
         model_pdf_STop.Print();
         
-        #rrv_number_WJets  = workspace.var("rrv_number_WJets0_"+self.channel+"_sig");
-        rrv_number_WJets  = workspace.var("rrv_number_WJets0_mj_sig_from_fit_%s"%self.channel)
+
+        #rrv_number_WJets  = workspace.var("rrv_number_WJets0_mj_sig_from_fit_%s"%self.channel)      <--for post-fit values
+        #rrv_number_TTbar  = workspace.var("rrv_number_TTbar_mj_sig_from_fit_%s"%self.channel)
+        rrv_number_WJets  = workspace.var("rrv_number_WJets0_"+self.channel+"_sig");
         rrv_number_WW     = workspace.var("rrv_number_WW_"+self.channel+"_sig");
         rrv_number_WZ     = workspace.var("rrv_number_WZ_"+self.channel+"_sig");
-        #rrv_number_TTbar  = workspace.var("rrv_number_TTbar_"+self.channel+"_sig");
-        rrv_number_TTbar  = workspace.var("rrv_number_TTbar_mj_sig_from_fit_%s"%self.channel)
+        rrv_number_TTbar  = workspace.var("rrv_number_TTbar_"+self.channel+"_sig");
+        
         rrv_number_STop   = workspace.var("rrv_number_STop_"+self.channel+"_sig");
 
         rrv_number_WJets.Print();
