@@ -1343,7 +1343,6 @@ objName ==objName_before ):
         self.draw_canvas(mplot,"%s/other/"%(self.plotsDir),"correction_pdf%s_%s_M_lvj_sig_to_sideband"%(label,mlvj_model),0,1,0,1);
 
         #@#make the same plot with log-scale
-        ###FIXME NOT WORKING atm, causes seg-val
         if 'WJets0' in label:
             mplot2 = rrv_x.frame(RooFit.Title("correlation_pdf_log"), RooFit.Bins(rrv_x.getBins())) ;
             mplot3 = rrv_x.frame(RooFit.Title("correlation_pdf_alpha"), RooFit.Bins(rrv_x.getBins()))
