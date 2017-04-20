@@ -1130,14 +1130,6 @@ objName ==objName_before ):
         self.fix_Model("_STop","_sig","_mlvj")
         self.fix_Model("_WW","_sig","_mlvj")
         self.fix_Model("_WZ","_sig","_mlvj")
-        
-
-        ### Call the evaluation of the normalization in the signal region for TTbar, VV, STop, and WJets after the extrapolation via alpha
-        #self.get_mlvj_normalization_insignalregion("_TTbar");
-        #self.get_mlvj_normalization_insignalregion("_STop");
-        #self.get_mlvj_normalization_insignalregion("_WW");
-        #self.get_mlvj_normalization_insignalregion("_WZ");
-        #self.get_mlvj_normalization_insignalregion(label,"model_pdf%s_sig_%s_after_correct_mlvj"%(label,self.channel));    
 
     #################################################################################################
     #################################################################################################
@@ -1193,7 +1185,6 @@ objName ==objName_before ):
             getattr(self.workspace4fit_,"import")(rrv_number_fitting_sig_mlvj);
         else :
             self.workspace4fit_.var("rrv_number_fitting_sig"+label+"_"+self.channel+"_mlvj").setVal(rrv_tmp.getVal()*signalInt_val);
-
 
         self.workspace4fit_.var("rrv_number_fitting_sig"+label+"_"+self.channel+"_mlvj").Print();
 
@@ -1430,203 +1421,6 @@ objName ==objName_before ):
     def fit_WJetsNorm(self, scaleJetMass = 0): # to get the normalization of WJets in sig
 
         self.mj_prefit_plot()
-
-        print "############### Fit mj Normalization ##################"
-        ## fit the two version of pdf for Wjets shape if available
-        #self.fit_WJetsNormalization_in_Mj_sig("_WJets0");
-        ###FIXME alternative function should be taken into account?
-        #self.fit_WJetsNormalization_in_Mj_sig("_WJets1");
-
-    #################################################################################################
-    #################################################################################################
-
-       #### make the mj sideband fit on data to get the Wjets normaliztion 
-    def fit_WJetsNormalization_in_Mj_sig(self,label): 
-
-####################
-#testplot
-        
-        print "############### Fit mj Normalization: ",label," ##################"
-        rrv_mass_j = self.workspace4fit_.var("rrv_mass_j")
-        rdataset_data_mj=self.workspace4fit_.data("rdataset_data_%s_mj"%(self.channel))
-
-        ### Fix TTbar, VV and STop
-        model_TTbar = self.get_General_mj_Model("_TTbar");
-        model_STop  = self.get_General_mj_Model("_STop");
-        model_WW    = self.get_General_mj_Model("_WW");
-        model_WZ    = self.get_General_mj_Model("_WZ");
-        
-        #@#errorTTbar 
-        ## only two parameters are fix, offset and width, while the exp is floating , otherwise if shape different User1 or ErfExp everything is flaoting
-        model_WJets = self.get_WJets_mj_Model(label);
-        model_WJets.Print()
-
-        ## Total Pdf and fit 
-        model_data = RooAddPdf("model_data_%s_mj"%self.channel,"model_data_%s_mj"%self.channel,RooArgList(model_WJets,model_WW,model_WZ,model_TTbar,model_STop))
-        #@#let ttbar float with gaussian constraint
-        mean_ttbar        = RooRealVar('ttbar_norm_mean_%s'%label,'ttbar_norm_mean_%s'%label,self.workspace4fit_.var("rrv_number_TTbar_%s_mj"%self.channel).getVal())
-        ttbar_uncert        = {'el' : 0.20, 'mu' : 0.20}
-        ttbar_xs_uncertainty        = ttbar_uncert[self.channel]
-        sigma_ttbar                = RooRealVar('ttbar_norm_sigma_%s'%label,'ttbar_norm_sigma_%s'%label,ttbar_xs_uncertainty * mean_ttbar.getVal())
-        ttbar_gauss                = RooGaussian("ttbar_gauss_uncert_%s"%label,"ttbar_gauss_uncert_%s"%label,self.workspace4fit_.var("rrv_number_TTbar_%s_mj"%self.channel),mean_ttbar,sigma_ttbar)
-        
-        #ttbar constrained
-        model_data4fit        = RooProdPdf("model_data_%s_mj_4fit"%self.channel,"model_data_%s_mj_4fit"%self.channel,RooArgList(model_data,ttbar_gauss))
-        model_data4fit.Print()
-        #raw_input('...')
-
-        #set which normalizations float in addition to W+Jets
-        self.workspace4fit_.var("rrv_number_TTbar_%s_mj"%self.channel).setConstant(kFALSE)
-
-        ###
-        ###use mj signal region as well for fit
-        rfresult = model_data4fit.fitTo( rdataset_data_mj, RooFit.Save(1) , RooFit.Range("sb_lo_to_sb_hi") ,RooFit.Extended(kTRUE), RooFit.NumCPU(2) );
-        rfresult = model_data4fit.fitTo( rdataset_data_mj, RooFit.Save(1) , RooFit.Range("sb_lo_to_sb_hi") ,RooFit.Extended(kTRUE), RooFit.NumCPU(2), RooFit.Minimizer("Minuit2") );
-        ##4DEBUG
-        #rfresult = model_data.fitTo( rdataset_data_mj, RooFit.Save(1) , RooFit.Range("sb_lo,sb_hi") ,RooFit.Extended(kTRUE), RooFit.NumCPU(2) );
-        #rfresult = model_data.fitTo( rdataset_data_mj, RooFit.Save(1) , RooFit.Range("sb_lo,sb_hi") ,RooFit.Extended(kTRUE), RooFit.NumCPU(2), RooFit.Minimizer("Minuit2") );
-        ##
-        self.fitresultsfinal.append(rfresult)
-
-        self.workspace4fit_.var("rrv_number_TTbar_%s_mj"%self.channel).setConstant(kTRUE)
-
-        getattr(self.workspace4fit_,"import")(model_data)
-        getattr(self.workspace4fit_,'import')(rfresult)
-        getattr(self.workspace4limit_,'import')(rfresult)
-
-        rfresult.Print();
-        rfresult.covarianceMatrix().Print();
-
-        ## Total numver of event 
-        rrv_number_data_mj = RooRealVar("rrv_number_data_%s_mj"%self.channel,"rrv_number_data_%s_mj"%self.channel,
-                                         self.workspace4fit_.var("rrv_number_TTbar_%s_mj"%self.channel).getVal()+
-                                         self.workspace4fit_.var("rrv_number_STop_%s_mj"%self.channel).getVal()+
-                                         self.workspace4fit_.var("rrv_number_WW_%s_mj"%self.channel).getVal()+
-                                         self.workspace4fit_.var("rrv_number_WZ_%s_mj"%self.channel).getVal()+
-                                         self.workspace4fit_.var("rrv_number%s_%s_mj"%(label,self.channel)).getVal());
-
-        rrv_number_data_mj.setError(TMath.Sqrt(self.workspace4fit_.var("rrv_number_TTbar_%s_mj"%self.channel).getError()**2+
-                                               self.workspace4fit_.var("rrv_number_STop_%s_mj"%self.channel).getError()**2+
-                                               self.workspace4fit_.var("rrv_number_WW_%s_mj"%self.channel).getError()**2+
-                                               self.workspace4fit_.var("rrv_number_WZ_%s_mj"%self.channel).getError()**2+
-                                               self.workspace4fit_.var("rrv_number%s_%s_mj"%(label,self.channel)).getError()**2));
-        getattr(self.workspace4fit_,"import")(rrv_number_data_mj);
-        
-        ## if fit on Wjets default with the default shape
-        if TString(label).Contains("_WJets0"):
-
-            ## make the final plot
-            mplot = rrv_mass_j.frame(RooFit.Title(""), RooFit.Bins(rrv_mass_j.getBins()));
-            rdataset_data_mj.plotOn(mplot, RooFit.Name("data_invisible"), RooFit.MarkerSize(1), RooFit.DataError(RooAbsData.Poisson), RooFit.XErrorSize(0) );
-
-            ## plot solid style 
-            model_data.plotOn(mplot,RooFit.Name("WZ"), RooFit.Components("model%s_%s_mj,model_STop_%s_mj,model_TTbar_%s_mj,model_WW_%s_mj,model_WZ_%s_mj"%(label,self.channel,self.channel,self.channel,self.channel,self.channel)),RooFit.DrawOption("F"), RooFit.FillColor(self.color_palet["WZ"]), RooFit.LineColor(kBlack));
-            model_data.plotOn(mplot,RooFit.Name("WW"), RooFit.Components("model%s_%s_mj,model_STop_%s_mj,model_TTbar_%s_mj,model_WW_%s_mj"%(label,self.channel,self.channel,self.channel,self.channel)),RooFit.DrawOption("F"), RooFit.FillColor(self.color_palet["WW"]), RooFit.LineColor(kBlack));
-            model_data.plotOn(mplot,RooFit.Name("TTbar"), RooFit.Components("model%s_%s_mj,model_STop_%s_mj,model_TTbar_%s_mj"%(label,self.channel,self.channel,self.channel)),RooFit.DrawOption("F"), RooFit.FillColor(self.color_palet["TTbar"]), RooFit.LineColor(kBlack));
-            model_data.plotOn(mplot,RooFit.Name("STop"), RooFit.Components("model%s_%s_mj,model_STop_%s_mj"%(label,self.channel,self.channel)),RooFit.DrawOption("F"), RooFit.FillColor(self.color_palet["STop"]), RooFit.LineColor(kBlack));
-            model_data.plotOn(mplot,RooFit.Name("WJets"), RooFit.Components("model%s_%s_mj"%(label,self.channel)),RooFit.DrawOption("F"), RooFit.FillColor(self.color_palet["WJets"]), RooFit.LineColor(kBlack));
-                 
-            ### solid line
-            model_data.plotOn( mplot,RooFit.Name("_invisible"), RooFit.Components("model%s_%s_mj"%(label,self.channel)), RooFit.LineColor(kBlack), RooFit.LineWidth(2));
-            model_data.plotOn( mplot,RooFit.Name("_invisible"), RooFit.Components("model%s_%s_mj,model_STop_%s_mj"%(label,self.channel,self.channel)), RooFit.LineColor(kBlack), RooFit.LineWidth(2));
-            model_data.plotOn( mplot,RooFit.Name("_invisible"), RooFit.Components("model%s_%s_mj,model_STop_%s_mj,model_TTbar_%s_mj"%(label,self.channel,self.channel,self.channel)), RooFit.LineColor(kBlack), RooFit.LineWidth(2));
-            model_data.plotOn( mplot,RooFit.Name("_invisible"), RooFit.Components("model%s_%s_mj,model_STop_%s_mj,model_TTbar_%s_mj,model_WW_%s_mj"%(label,self.channel,self.channel,self.channel,self.channel)),RooFit.LineColor(kBlack), RooFit.LineWidth(1));
-            model_data.plotOn( mplot,RooFit.Name("_invisible"), RooFit.Components("model%s_%s_mj,model_STop_%s_mj,model_TTbar_%s_mj,model_WW_%s_mj,model_WZ_%s_mj"%(label,self.channel,self.channel,self.channel,self.channel,self.channel)),RooFit.LineColor(kBlack), RooFit.LineWidth(1));
-
- 
-            rdataset_data_mj.plotOn(mplot, RooFit.Name("data"), RooFit.MarkerSize(1), RooFit.DataError(RooAbsData.Poisson), RooFit.XErrorSize(0) );
-
-            ### draw the error band using the sum of all the entries component MC + fit         
-            draw_error_band(rdataset_data_mj, model_data, rrv_number_data_mj,rfresult,mplot,self.color_palet["Uncertainty"],"F");
-            rdataset_data_mj.plotOn(mplot, RooFit.Name("data_invisible"), RooFit.MarkerSize(1), RooFit.DataError(RooAbsData.Poisson), RooFit.XErrorSize(0) );
-            print rdataset_data_mj.sumEntries()
-
-            ### Get the pull and plot it 
-            mplot_pull = self.get_pull(rrv_mass_j,mplot);
-
-            ### signal window zone with vertical lines
-            lowerLine         = TLine(65,0.,65,mplot.GetMaximum()*1); lowerLine.SetLineWidth(2); lowerLine.SetLineColor(kBlack); lowerLine.SetLineStyle(7);
-            upperLine         = TLine(105,0.,105,mplot.GetMaximum()*1); upperLine.SetLineWidth(2); upperLine.SetLineColor(kBlack); upperLine.SetLineStyle(7);
-            mplot.addObject(lowerLine);
-            mplot.addObject(upperLine);
-
-            pt = ROOT.TPaveText(0.3592965,0.02847153,0.5728643,0.1008991,"NDC")
-            pt.SetTextFont(42)
-            pt.SetTextSize(0.04995005)
-            #pt.SetTextAlign(12)
-            pt.SetFillColor(self.color_palet["WJets"])
-            pt.SetBorderSize(0)
-            text = pt.AddText("#leftarrow signal region #rightarrow")
-            text.SetTextFont(62)
-
-            mplot.addObject(pt)
-                        
-            ### legend of the plot
-            self.leg = self.legend4Plot(mplot,0,1,0.3,0.,0.,0.,0,0,1);
-            self.leg.SetHeader("post-fit (not combine)")
-            #self.leg = self.legend4Plot(mplot,0,1,-0.10,-0.01,0.10,0.01);
-
-            mplot.addObject(self.leg);
-            mplot.GetYaxis().SetRangeUser(1e-2,mplot.GetMaximum()*1.1);
-
-            self.nPar_float_in_fitTo = rfresult.floatParsFinal().getSize();
-            nBinX = mplot.GetNbinsX();
-            ndof  = nBinX-self.nPar_float_in_fitTo;
-            #print mplot.chiSquare();
-            #print "#################### JENchi2 nPar=%s, chiSquare=%s/%s"%(self.nPar_float_in_fitTo ,mplot.chiSquare(self.nPar_float_in_fitTo)*ndof, ndof );
-            datahist = rdataset_data_mj.binnedClone( rdataset_data_mj.GetName()+"_binnedClone",rdataset_data_mj.GetName()+"_binnedClone" )
-
-            parameters_list = model_data.getParameters(rdataset_data_mj);
-            self.draw_canvas_with_pull( rrv_mass_j,datahist,mplot, mplot_pull,ndof,parameters_list,"%s/m_j_fitting/"%(self.plotsDir), "m_j_postfit%s"%(label),"",1,0,1)
-
-
-        #### to calculate the WJets's normalization and error in M_J sig. The error must contain the shape error: model_WJets has new parameters fitting data
-
-        fullInt           = model_WJets.createIntegral(RooArgSet(rrv_mass_j),RooArgSet(rrv_mass_j) );
-        signalInt         = model_WJets.createIntegral(RooArgSet(rrv_mass_j),RooArgSet(rrv_mass_j),("sig"));
-        fullInt_val        = fullInt.getVal()
-        signalInt_val         = signalInt.getVal()/fullInt_val
-        ## take the value from the fit (normalization) and multiply it with the ratio of the integrals
-        rrv_number_WJets_mj_sig_from_fit = RooRealVar("rrv_number%s_mj_sig_from_fit_%s"%(label,self.channel),"rrv_number%s_mj_sig_from_fit_%s"%(label,self.channel),self.workspace4fit_.var("rrv_number%s_%s_mj"%(label,self.channel)).getVal()*signalInt_val);
-
-        #@#WJETSNORMSB
-        rrv_number_WJets_mj_sb_from_fit = RooRealVar("rrv_number%s_mj_sb_from_fit_%s"%(label,self.channel),"rrv_number%s_mj_sb_from_fit_%s"%(label,self.channel),self.workspace4fit_.var("rrv_number%s_%s_mj"%(label,self.channel)).getVal()*(1-signalInt_val)) 
-        #@#
-
-        #same for ttbar
-        fullInt           = model_TTbar.createIntegral(RooArgSet(rrv_mass_j),RooArgSet(rrv_mass_j) );
-        signalInt         = model_TTbar.createIntegral(RooArgSet(rrv_mass_j),RooArgSet(rrv_mass_j),("sig"));
-        fullInt_val        = fullInt.getVal()
-        signalInt_val         = signalInt.getVal()/fullInt_val
-        ## take the value from the fit (normalization) and multiply it with the ratio of the integrals
-        rrv_number_TTbar_mj_sig_from_fit = RooRealVar("rrv_number_TTbar_mj_sig_from_fit_%s"%self.channel,"rrv_number_TTbar_mj_sig_from_fit_%s"%self.channel,self.workspace4fit_.var("rrv_number_TTbar_%s_mj"%self.channel).getVal()*signalInt_val);
-        rrv_number_TTbar_mj_sb_from_fit = RooRealVar("rrv_number_TTbar_mj_sb_from_fit_%s"%self.channel,"rrv_number_TTbar_mj_sb_from_fit_%s"%self.channel,self.workspace4fit_.var("rrv_number_TTbar_%s_mj"%self.channel).getVal()*(1-signalInt_val)) 
-        #@#
-
-        #### Error on the normalization --> from a dedicated function taking into account shape uncertainty
-        print rrv_number_WJets_mj_sig_from_fit.getError()
-        rrv_number_WJets_mj_sig_from_fit.setError( Calc_error_extendPdf(rdataset_data_mj, model_WJets, rfresult,"sig") );
-        getattr(self.workspace4fit_,"import")(rrv_number_WJets_mj_sig_from_fit);
-        getattr(self.workspace4fit_,"import")(rrv_number_WJets_mj_sb_from_fit);
-        getattr(self.workspace4limit_,"import")(rrv_number_WJets_mj_sig_from_fit);
-        getattr(self.workspace4limit_,"import")(rrv_number_WJets_mj_sb_from_fit);
-        getattr(self.workspace4fit_,'import')(rrv_number_TTbar_mj_sig_from_fit)
-        getattr(self.workspace4fit_,'import')(rrv_number_TTbar_mj_sb_from_fit)
-        getattr(self.workspace4limit_,'import')(rrv_number_TTbar_mj_sig_from_fit)
-        getattr(self.workspace4limit_,'import')(rrv_number_TTbar_mj_sb_from_fit)
-
-        rrv_number_WJets_mj_sig_from_fit.Print();
-
-#testplot        
-####################
-
-        ##FIXME import to workspace4fit_ here, import to workspace4limit_ in prepare_limit 
-        getattr(self.workspace4limit_,'import')(self.workspace4fit_.var('rrv_number_TTbar_%s_mj'%self.channel))
-        getattr(self.workspace4limit_,'import')(self.workspace4fit_.var('rrv_number_STop_%s_mj'%self.channel))
-        getattr(self.workspace4limit_,'import')(self.workspace4fit_.var('rrv_number_WW_%s_mj'%self.channel))
-        getattr(self.workspace4limit_,'import')(self.workspace4fit_.var('rrv_number_WZ_%s_mj'%self.channel))
-        
-        self.workspace4limit_.Print()
 
     #################################################################################################
     #################################################################################################
@@ -2360,9 +2154,7 @@ objName ==objName_before ):
         self.workspace4limit_.allVars().Print("V")
         self.workspace4fit_.allVars().Print("V")
         self.workspace4fit_.allPdfs().Print("V")
-        
 
-                    
         ### Save the workspace
         self.save_workspace_to_file();
 
@@ -2401,9 +2193,6 @@ objName ==objName_before ):
         model_pdf_TTbar.Print();
         model_pdf_STop.Print();
         
-
-        #rrv_number_WJets  = workspace.var("rrv_number_WJets0_mj_sig_from_fit_%s"%self.channel)      <--for post-fit values
-        #rrv_number_TTbar  = workspace.var("rrv_number_TTbar_mj_sig_from_fit_%s"%self.channel)
         rrv_number_WJets  = workspace.var("rrv_number_WJets0_"+self.channel+"_sig");
         rrv_number_WW     = workspace.var("rrv_number_WW_"+self.channel+"_sig");
         rrv_number_WZ     = workspace.var("rrv_number_WZ_"+self.channel+"_sig");
