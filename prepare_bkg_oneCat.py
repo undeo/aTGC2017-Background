@@ -2262,6 +2262,19 @@ objName ==objName_before ):
     ###import and rename everything needed in the final limit setting procedure
     def prepare_limit(self,mode, isTTbarFloating=0, isVVFloating=0, isSTopFloating=0):
 
+        if self.MODEL_4_mlvj=="ExpN" or self.MODEL_4_mlvj=="ExpTail":
+            self.workspace4fit_.var("Deco_WJets0_sim_%s_%s_mlvj_13TeV_eig0"%(self.channel, self.wtagger_label)).setError(self.shape_para_error_alpha);
+            self.workspace4fit_.var("Deco_WJets0_sim_%s_%s_mlvj_13TeV_eig1"%(self.channel, self.wtagger_label)).setError(self.shape_para_error_alpha);
+            self.workspace4fit_.var("Deco_WJets0_sim_%s_%s_mlvj_13TeV_eig2"%(self.channel, self.wtagger_label)).setError(self.shape_para_error_alpha);
+            self.workspace4fit_.var("Deco_WJets0_sim_%s_%s_mlvj_13TeV_eig3"%(self.channel, self.wtagger_label)).setError(self.shape_para_error_alpha);
+
+            ### TTbar use expN
+            if isTTbarFloating !=0:
+                self.workspace4fit_.var("Deco_TTbar_sig_%s_%s_mlvj_13TeV_eig0"%(self.channel, self.wtagger_label)).setError(self.shape_para_error_TTbar);
+                self.workspace4fit_.var("Deco_TTbar_sig_%s_%s_mlvj_13TeV_eig1"%(self.channel, self.wtagger_label)).setError(self.shape_para_error_TTbar);
+                self.workspace4fit_.var("Deco_TTbar_sb_%s_%s_mlvj_13TeV_eig0"%(self.channel, self.wtagger_label)).setError(self.shape_para_error_TTbar);
+                self.workspace4fit_.var("Deco_TTbar_sb_%s_%s_mlvj_13TeV_eig1"%(self.channel, self.wtagger_label)).setError(self.shape_para_error_TTbar);
+
         #@#prepare functions for simultaneous fit in combine
         #all pdfs are splitted into sb and sig regions (only in mj spectrum, mlvj is done in the signal code)
         getattr(self.workspace4fit_,'import')(self.workspace4fit_.pdf("model_pdf_WJets0_%s_mj"%self.channel).clone("model_pdf_WJets_%s_mj"%self.channel))
@@ -2348,29 +2361,7 @@ objName ==objName_before ):
         self.workspace4fit_.allVars().Print("V")
         self.workspace4fit_.allPdfs().Print("V")
         
-        if mode=="sideband_correction_method1":
 
-            if self.MODEL_4_mlvj=="Exp":
-                self.workspace4limit_.var("Deco_WJets0_sb_from_fitting_%s_%s_mlvj_13TeV_eig0"%(self.channel, self.wtagger_label[0]+self.wtagger_label[1])).setError(self.shape_para_error_WJets0);
-                self.workspace4limit_.var("Deco_WJets0_sb_from_fitting_%s_%s_mlvj_13TeV_eig1"%(self.channel, self.wtagger_label[0]+self.wtagger_label[1])).setError(self.shape_para_error_WJets0);
-                
-                self.workspace4limit_.var("Deco_WJets0_sim_%s_%s_mlvj_13TeV_eig0"%(self.channel, self.wtagger_label)).setError(self.shape_para_error_alpha);
-                self.workspace4limit_.var("Deco_WJets0_sim_%s_%s_mlvj_13TeV_eig1"%(self.channel, self.wtagger_label)).setError(self.shape_para_error_alpha);
-
-                if isTTbarFloating !=0 :
-                 self.workspace4limit_.var("Deco_TTbar_sig_%s_%s_mlvj_13TeV_eig0"%(self.channel, self.wtagger_label)).setError(self.shape_para_error_TTbar);
-
-            if self.MODEL_4_mlvj=="ExpN" or self.MODEL_4_mlvj=="ExpTail":
-                self.workspace4limit_.var("Deco_WJets0_sim_%s_%s_mlvj_13TeV_eig0"%(self.channel, self.wtagger_label)).setError(self.shape_para_error_alpha);
-                self.workspace4limit_.var("Deco_WJets0_sim_%s_%s_mlvj_13TeV_eig1"%(self.channel, self.wtagger_label)).setError(self.shape_para_error_alpha);
-                self.workspace4limit_.var("Deco_WJets0_sim_%s_%s_mlvj_13TeV_eig2"%(self.channel, self.wtagger_label)).setError(self.shape_para_error_alpha);
-                self.workspace4limit_.var("Deco_WJets0_sim_%s_%s_mlvj_13TeV_eig3"%(self.channel, self.wtagger_label)).setError(self.shape_para_error_alpha);
-
-                ### TTbar use expN
-                if isTTbarFloating !=0:
-                    print "##################### TTbar will float in the limit procedure + final plot ######################";
-                    self.workspace4limit_.var("Deco_TTbar_sig_%s_%s_mlvj_13TeV_eig0"%(self.channel, self.wtagger_label)).setError(self.shape_para_error_TTbar);
-                    self.workspace4limit_.var("Deco_TTbar_sig_%s_%s_mlvj_13TeV_eig1"%(self.channel, self.wtagger_label)).setError(self.shape_para_error_TTbar);
                     
         ### Save the workspace
         self.save_workspace_to_file();
