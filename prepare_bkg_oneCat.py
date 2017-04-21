@@ -682,8 +682,6 @@ objName ==objName_before ):
             param.Print();
             param=par.Next()
         return model_General
-        
-
 
     #################################################################################################
     #################################################################################################
@@ -765,7 +763,6 @@ objName ==objName_before ):
             param.setConstant(kTRUE);
             param.Print();
             param=par.Next()
-
 
     #################################################################################################
     #################################################################################################
@@ -1418,7 +1415,7 @@ objName ==objName_before ):
 
     #### method to fit the WJets normalization inside the mj signal region -> and write the jets mass sys if available
     def fit_WJetsNorm(self, scaleJetMass = 0): # to get the normalization of WJets in sig
-
+        #->not used anymore, just make the prefit plot
         self.mj_prefit_plot()
 
     #################################################################################################
